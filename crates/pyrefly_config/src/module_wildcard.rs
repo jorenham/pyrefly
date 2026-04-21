@@ -32,6 +32,7 @@ pub(crate) struct ModuleWildcard {
 
 #[derive(PartialEq)]
 pub enum Match {
+    #[allow(clippy::enum_variant_names)]
     NoMatch,
     Positive,
     Negative,

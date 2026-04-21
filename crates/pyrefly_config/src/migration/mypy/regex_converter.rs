@@ -23,16 +23,16 @@ enum Ir {
 
 impl Ir {
     /// Consumes the IR to create the list of strings.
-    fn to_strings(self) -> Vec<String> {
+    fn to_strings(&self) -> Vec<String> {
         match self {
             // Part is easy: its string is itself.
-            Self::Part(s) => vec![s],
+            Self::Part(s) => vec![s.clone()],
             // For concat, the components are glued together.
             // An Alter in this Concat produces multiple strings:
             // `a(b|c)` -> Concat(a, Alter(b, c)) -> ["ab", "ac"]
             // To handle this, each Ir in the Concat is glued to each of the strings that is being built.
             Self::Concat(parts) => parts
-                .into_iter()
+                .iter()
                 .map(Ir::to_strings)
                 .reduce(|acc, ps| {
                     acc.iter()
@@ -41,10 +41,7 @@ impl Ir {
                 })
                 .unwrap_or_default(),
             // Alter is also easy: each Ir is handled independently.
-            Self::Alter(parts) => parts
-                .into_iter()
-                .flat_map(Ir::to_strings)
-                .collect::<Vec<_>>(),
+            Self::Alter(parts) => parts.iter().flat_map(Ir::to_strings).collect::<Vec<_>>(),
         }
     }
 }

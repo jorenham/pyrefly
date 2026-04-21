@@ -7,6 +7,7 @@
 
 pub(crate) mod active_environment;
 pub(crate) mod conda;
+#[allow(clippy::module_inception)]
 pub mod environment;
 pub(crate) mod finder;
 pub mod interpreters;
