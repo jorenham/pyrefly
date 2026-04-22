@@ -32,7 +32,10 @@ pub(crate) struct ModuleWildcard {
 
 #[derive(PartialEq)]
 pub enum Match {
-    #[allow(clippy::enum_variant_names)]
+    #[expect(
+        clippy::enum_variant_names,
+        reason = "NoMatch is the clearest name for the non-matching case"
+    )]
     NoMatch,
     Positive,
     Negative,

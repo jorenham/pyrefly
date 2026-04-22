@@ -7,7 +7,10 @@
 
 pub(crate) mod active_environment;
 pub(crate) mod conda;
-#[allow(clippy::module_inception)]
+#[expect(
+    clippy::module_inception,
+    reason = "environment is both the module group and public API"
+)]
 pub mod environment;
 pub(crate) mod finder;
 pub mod interpreters;
