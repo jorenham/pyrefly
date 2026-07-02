@@ -23,7 +23,6 @@ use pyrefly_python::module_path::ModuleStyle;
 use pyrefly_python::nesting_context::NestingContext;
 use pyrefly_python::short_identifier::ShortIdentifier;
 use pyrefly_types::callable::PropertyRole;
-use pyrefly_types::class::ClassDefIndex;
 use pyrefly_types::class::ClassType;
 use pyrefly_types::types::Type;
 use pyrefly_util::forgetter::Forgetter;
@@ -924,24 +923,6 @@ fn return_annotation_range(bindings: &Bindings, return_idx: Idx<Key>) -> Option<
     }
 }
 
-/// Only the first parameter (`self`/`cls`) is allowed to be unannotated.
-fn is_function_completely_annotated(
-    bindings: &Bindings,
-    answers: &Answers,
-    undecorated_idx: Idx<KeyUndecoratedFunction>,
-) -> bool {
-    let fun = bindings.get(undecorated_idx);
-    let return_idx = bindings.key_to_idx(&Key::ReturnType(ShortIdentifier::new(&fun.def.name)));
-    if return_annotation_range(bindings, return_idx).is_none() {
-        return false;
-    }
-
-    let implicit_receiver = has_implicit_receiver(fun, answers, undecorated_idx);
-    params_with_keys(&fun.def.parameters, implicit_receiver)
-        .iter()
-        .all(|(key, param)| key.is_none() || param.annotation.is_some())
-}
-
 /// Only a bare `Any` counts as unknown; container types like `list[Any]` are known.
 fn is_type_known(ty: &Type) -> bool {
     !ty.is_any()
@@ -1139,37 +1120,17 @@ fn parse_classes(
     module: &Module,
     bindings: &Bindings,
     answers: &Answers,
-    transaction: &Transaction,
-    handle: &Handle,
     tco_classes: &SmallSet<Idx<KeyClass>>,
 ) -> Vec<ReportClass> {
     let mut classes = Vec::new();
     let deleted = bindings.module_deletes();
-
-    // group method definitions by class
-    let mut methods_by_class: HashMap<Idx<KeyClass>, Vec<Idx<KeyUndecoratedFunction>>> =
-        HashMap::new();
-    for idx in bindings.keys::<Key>() {
-        if let Key::Definition(_) = bindings.idx_to_key(idx)
-            && let Binding::Function(x, _pred, _class_meta) = bindings.get(idx)
-        {
-            let undecorated_idx = bindings.get(*x).undecorated_idx;
-            if let Some(class_key) = bindings.get(undecorated_idx).class_key {
-                methods_by_class
-                    .entry(class_key)
-                    .or_default()
-                    .push(undecorated_idx);
-            }
-        }
-    }
 
     for class_idx in bindings.keys::<KeyClass>() {
         // Skip @type_check_only classes.
         if tco_classes.contains(&class_idx) {
             continue;
         }
-        let binding_class = bindings.get(class_idx);
-        let cls_binding = match binding_class {
+        let cls_binding = match bindings.get(class_idx) {
             BindingClass::ClassDef(cls) => cls,
             BindingClass::FunctionalClassDef(..) => continue,
         };
@@ -1183,67 +1144,13 @@ fn parse_classes(
         if parent.is_toplevel() && deleted.contains(&name.id) {
             continue;
         }
-        let class_type = match answers.get_idx(class_idx) {
-            Some(result) => match &result.0 {
-                Some(cls) => cls.clone(),
-                None => continue,
-            },
-            None => continue,
-        };
-        let class_name = class_fqn(module, parent, name);
-        let mro = answers
-            .get_idx(bindings.key_to_idx(&KeyClassMro(ClassDefIndex(class_type.index().0))))
-            .unwrap_or_else(|| Arc::new(ClassMro::Cyclic));
-        // Check methods defined directly on this class
-        let mut incomplete_attributes = Vec::new();
-        for &undecorated_idx in methods_by_class.get(&class_idx).into_iter().flatten() {
-            if !is_function_completely_annotated(bindings, answers, undecorated_idx) {
-                incomplete_attributes.push(IncompleteAttribute {
-                    name: bindings.get(undecorated_idx).def.name.to_string(),
-                    declared_in: class_name.clone(),
-                });
-            }
+        // Skip classes that fail to resolve.
+        if answers.get_idx(class_idx).is_none_or(|c| c.0.is_none()) {
+            continue;
         }
-        // Check inherited methods
-        for ancestor_class_type in mro.ancestors_no_object() {
-            let ancestor_class = ancestor_class_type.class_object();
-            // Skip methods inherited from builtins
-            if ancestor_class.module_name().as_str() == "builtins" {
-                continue;
-            }
-            let ancestor_name = class_fqn(
-                ancestor_class.module(),
-                ancestor_class.qname().parent(),
-                ancestor_class.name(),
-            );
-            let Some(ancestor_class_fields) = transaction.get_class_fields(handle, ancestor_class)
-            else {
-                continue;
-            };
-            for field_name in ancestor_class_fields.names() {
-                let field_name_str = field_name.to_string();
-                // Skip if we already have this attribute listed (it has been overridden
-                // by the current class or another class in the MRO)
-                if incomplete_attributes
-                    .iter()
-                    .any(|a| a.name == field_name_str)
-                {
-                    continue;
-                }
-                if !ancestor_class_fields.is_field_annotated(field_name) {
-                    incomplete_attributes.push(IncompleteAttribute {
-                        name: field_name_str,
-                        declared_in: ancestor_name.clone(),
-                    });
-                }
-            }
-        }
-        let location = range_to_location(module, cls_binding.def.range);
-        incomplete_attributes.sort();
         classes.push(ReportClass {
-            name: class_name,
-            incomplete_attributes,
-            location,
+            name: class_fqn(module, parent, name),
+            location: range_to_location(module, cls_binding.def.range),
         });
     }
     classes.sort();
@@ -1356,14 +1263,7 @@ impl ModuleSymbols {
             &tco_classes,
         );
         merge_overloads(&mut functions);
-        let classes = parse_classes(
-            &module,
-            &bindings,
-            &answers,
-            transaction,
-            handle,
-            &tco_classes,
-        );
+        let classes = parse_classes(&module, &bindings, &answers, &tco_classes);
         let mut variables = parse_variables(
             &module,
             &bindings,
