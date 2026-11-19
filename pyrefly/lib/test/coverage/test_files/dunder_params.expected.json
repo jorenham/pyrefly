@@ -3,11 +3,13 @@
   "path": "test.py",
   "names": [
     "test.WithExit.__exit__",
-    "test.WithGetattr.__getattr__",
     "test.WithGetattribute.__getattribute__",
-    "test.WithSetattr.__setattr__",
     "test.AnnotatedExit.__exit__",
     "test.WithNewRenamed.__new__",
+    "test.AliasedGetattr.__getitem__",
+    "test.__setattr__",
+    "test.WithGetattr.get",
+    "test.AliasedGetattr",
     "test.AnnotatedExit",
     "test.WithExit",
     "test.WithGetattr",
@@ -15,7 +17,7 @@
     "test.WithNewRenamed",
     "test.WithSetattr"
   ],
-  "line_count": 41,
+  "line_count": 55,
   "symbol_reports": [
     {
       "kind": "function",
@@ -25,19 +27,7 @@
       "n_any": 0,
       "n_untyped": 1,
       "location": {
-        "line": 14,
-        "column": 5
-      }
-    },
-    {
-      "kind": "function",
-      "name": "test.WithGetattr.__getattr__",
-      "n_typable": 1,
-      "n_typed": 0,
-      "n_any": 0,
-      "n_untyped": 1,
-      "location": {
-        "line": 19,
+        "line": 15,
         "column": 5
       }
     },
@@ -49,19 +39,7 @@
       "n_any": 0,
       "n_untyped": 1,
       "location": {
-        "line": 24,
-        "column": 5
-      }
-    },
-    {
-      "kind": "function",
-      "name": "test.WithSetattr.__setattr__",
-      "n_typable": 1,
-      "n_typed": 0,
-      "n_any": 0,
-      "n_untyped": 1,
-      "location": {
-        "line": 29,
+        "line": 27,
         "column": 5
       }
     },
@@ -73,7 +51,7 @@
       "n_any": 0,
       "n_untyped": 0,
       "location": {
-        "line": 34,
+        "line": 37,
         "column": 5
       }
     },
@@ -85,8 +63,56 @@
       "n_any": 0,
       "n_untyped": 0,
       "location": {
-        "line": 39,
+        "line": 42,
         "column": 5
+      }
+    },
+    {
+      "kind": "function",
+      "name": "test.AliasedGetattr.__getitem__",
+      "n_typable": 2,
+      "n_typed": 2,
+      "n_any": 0,
+      "n_untyped": 0,
+      "location": {
+        "line": 47,
+        "column": 5
+      }
+    },
+    {
+      "kind": "function",
+      "name": "test.__setattr__",
+      "n_typable": 3,
+      "n_typed": 0,
+      "n_any": 0,
+      "n_untyped": 3,
+      "location": {
+        "line": 53,
+        "column": 1
+      }
+    },
+    {
+      "kind": "function",
+      "name": "test.WithGetattr.get",
+      "n_typable": 2,
+      "n_typed": 0,
+      "n_any": 0,
+      "n_untyped": 2,
+      "location": {
+        "line": 23,
+        "column": 5
+      }
+    },
+    {
+      "kind": "class",
+      "name": "test.AliasedGetattr",
+      "n_typable": 0,
+      "n_typed": 0,
+      "n_any": 0,
+      "n_untyped": 0,
+      "location": {
+        "line": 46,
+        "column": 1
       }
     },
     {
@@ -97,7 +123,7 @@
       "n_any": 0,
       "n_untyped": 0,
       "location": {
-        "line": 33,
+        "line": 36,
         "column": 1
       }
     },
@@ -109,7 +135,7 @@
       "n_any": 0,
       "n_untyped": 0,
       "location": {
-        "line": 13,
+        "line": 14,
         "column": 1
       }
     },
@@ -121,7 +147,7 @@
       "n_any": 0,
       "n_untyped": 0,
       "location": {
-        "line": 18,
+        "line": 19,
         "column": 1
       }
     },
@@ -133,7 +159,7 @@
       "n_any": 0,
       "n_untyped": 0,
       "location": {
-        "line": 23,
+        "line": 26,
         "column": 1
       }
     },
@@ -145,7 +171,7 @@
       "n_any": 0,
       "n_untyped": 0,
       "location": {
-        "line": 38,
+        "line": 41,
         "column": 1
       }
     },
@@ -157,23 +183,23 @@
       "n_any": 0,
       "n_untyped": 0,
       "location": {
-        "line": 28,
+        "line": 31,
         "column": 1
       }
     }
   ],
   "type_ignores": [],
-  "n_typable": 7,
-  "n_typed": 3,
+  "n_typable": 12,
+  "n_typed": 5,
   "n_any": 0,
-  "n_untyped": 4,
-  "coverage": 42.857142857142854,
-  "strict_coverage": 42.857142857142854,
-  "n_functions": 0,
+  "n_untyped": 7,
+  "coverage": 41.66666666666667,
+  "strict_coverage": 41.66666666666667,
+  "n_functions": 1,
   "n_methods": 6,
-  "n_function_params": 0,
-  "n_method_params": 2,
-  "n_classes": 6,
+  "n_function_params": 2,
+  "n_method_params": 3,
+  "n_classes": 7,
   "n_attrs": 0,
   "n_properties": 0,
   "n_type_ignores": 0

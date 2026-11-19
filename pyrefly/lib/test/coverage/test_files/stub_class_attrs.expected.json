@@ -6,7 +6,7 @@
     "test.C.y",
     "test.C"
   ],
-  "line_count": 9,
+  "line_count": 12,
   "symbol_reports": [
     {
       "kind": "attr",
@@ -16,7 +16,7 @@
       "n_any": 0,
       "n_untyped": 0,
       "location": {
-        "line": 7,
+        "line": 9,
         "column": 5
       }
     },
@@ -28,7 +28,7 @@
       "n_any": 0,
       "n_untyped": 0,
       "location": {
-        "line": 8,
+        "line": 10,
         "column": 5
       }
     },
@@ -40,7 +40,7 @@
       "n_any": 0,
       "n_untyped": 0,
       "location": {
-        "line": 6,
+        "line": 8,
         "column": 1
       }
     }

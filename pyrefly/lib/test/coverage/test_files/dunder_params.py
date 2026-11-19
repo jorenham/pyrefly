@@ -5,8 +5,9 @@
 
 # Tests for dunder methods with implicit parameter types.
 # __exit__ params (exc_type, exc_val, exc_tb) are protocol-fixed → 0 slots.
-# __getattr__/__getattribute__ param 0 (name: str) is implicit → 0 slots.
-# __setattr__ param 0 (name: str) is implicit, param 1 (value) is not.
+# __getattribute__ param 0 (name: str) is implicit → 0 slots.
+# Class-level __getattr__ and __setattr__ are excluded from the report entirely,
+# also when defined as aliases, but public aliases of them are kept.
 # Explicit annotations on implicit slots are still excluded.
 
 
@@ -18,6 +19,8 @@ class WithExit:
 class WithGetattr:
     def __getattr__(self, name):
         return None
+
+    get = __getattr__
 
 
 class WithGetattribute:
@@ -38,3 +41,14 @@ class AnnotatedExit:
 class WithNewRenamed:
     def __new__(_cls, x: int) -> "WithNewRenamed":
         return super().__new__(_cls)
+
+
+class AliasedGetattr:
+    def __getitem__(self, key: str) -> int:
+        return 0
+
+    __getattr__ = __getitem__
+
+
+def __setattr__(name, value):
+    pass

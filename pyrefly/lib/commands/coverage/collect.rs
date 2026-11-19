@@ -309,6 +309,10 @@ const EXCLUDED_MODULE_DUNDERS: &[&str] = &[
     "__spec__",
 ];
 
+/// Class members that are always excluded from the report, because requiring annotations on them
+/// does more harm than good. Stubtest's `IGNORABLE_CLASS_DUNDERS` likewise lets stubs omit them.
+const EXCLUDED_CLASS_DUNDERS: &[&str] = &["__getattr__", "__setattr__"];
+
 /// Walk re-exports to the defining module's handle and name, `None` on cycle/miss.
 fn trace_export_origin(
     handle: &Handle,
@@ -1234,7 +1238,6 @@ fn is_implicit_dunder_return(name: &str) -> bool {
             | "__bytes__"
             | "__sizeof__"
             | "__contains__"
-            | "__setattr__"
             | "__delattr__"
             | "__setitem__"
             | "__delitem__"
@@ -1252,15 +1255,16 @@ fn is_implicit_dunder_return(name: &str) -> bool {
 }
 
 /// Dunder method parameters whose types are fully determined by the
-/// protocol (e.g. `__exit__`'s exception triple, `__getattr__`'s `name: str`).
+/// protocol (e.g. `__exit__`'s exception triple, `__getattribute__`'s `name: str`).
 /// Positions are 0-indexed after excluding self/cls.
 fn is_implicit_dunder_param(name: &str, non_self_param_pos: usize) -> bool {
     match name {
         // __exit__/__aexit__(self, exc_type, exc_val, exc_tb)
         "__exit__" | "__aexit__" => non_self_param_pos <= 2,
         // First non-self param is protocol-fixed (str, int, or memoryview)
-        "__getattr__" | "__getattribute__" | "__delattr__" | "__setattr__" | "__format__"
-        | "__buffer__" | "__release_buffer__" => non_self_param_pos == 0,
+        "__getattribute__" | "__delattr__" | "__format__" | "__buffer__" | "__release_buffer__" => {
+            non_self_param_pos == 0
+        }
         // __set_name__(self, owner, name: str) — name at position 1
         "__set_name__" => non_self_param_pos == 1,
         _ => false,
@@ -1667,6 +1671,8 @@ impl ModuleSymbols {
         ));
 
         // A private name hides its whole subtree, unless exported via `__all__` (issue #3578).
+        // Filtering after alias resolution also drops excluded class dunders defined as aliases or
+        // attributes, while keeping public aliases of them.
         let prefix = module_prefix(&module);
         let is_visible = |name: &str| {
             let relative = name
@@ -1677,7 +1683,7 @@ impl ModuleSymbols {
                 .next()
                 .expect("split yields at least one component");
             (is_public_name(top) || dunder_all.iter().any(|n| n == top))
-                && components.all(is_public_name)
+                && components.all(|c| is_public_name(c) && !EXCLUDED_CLASS_DUNDERS.contains(&c))
         };
         functions.retain(|f| is_visible(&f.name));
         classes.retain(|c| is_visible(&c.name));
@@ -2846,8 +2852,8 @@ mod tests {
     }
 
     /// Dunder methods with implicit parameter types (__exit__ exception triple,
-    /// __getattr__ name, __setattr__ name). Unannotated implicit params get 0 slots;
-    /// explicit annotations on implicit params count normally.
+    /// __getattribute__ name) get 0 slots for those params, even when annotated.
+    /// Class-level __getattr__ and __setattr__ are excluded, including as aliases.
     #[test]
     fn test_report_dunder_params() {
         let report = build_module_report_for_test("dunder_params.py");
